@@ -1,0 +1,26 @@
+name: CI/CD with Docker Compose
+
+on:
+  push:
+    branches:
+      - main # Modify this to match your main branch name
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Login to AWS ECR
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ secrets.AWS_REGION }}
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.DOCKER_REGISTRY_URL }}
+
+      - name: Build and Push Docker Image
+        run: |
+          docker-compose -f docker-compose.staging.yml build
+          docker-compose -f docker-compose.staging.yml push
